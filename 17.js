@@ -5,7 +5,7 @@ const inputFile = '17demo.txt'
 let grid = []
 var minX = null, maxX = null, minY = null, maxY = null
 
-const squareTypes = {
+const types = {
     SPRING: { name: 'spring', display: '+' },
     SAND: { name: 'sand', display: '.' },
     CLAY: { name: 'clay', display: '#' },
@@ -21,9 +21,13 @@ class Square {
     }
 
     convertType(type) {
-        if(this.type == squareTypes.CLAY || this.type == squareTypes.STANDING_WATER) throw new Error(`Cannot convert ${this.type.name} to ${this.type.name}`)
-        
+        if(this.type == types.CLAY || this.type == types.STANDING_WATER) throw new Error(`Cannot convert ${this.type.name} to ${this.type.name}`)
+
         this.type = type
+    }
+
+    isAccessible() {
+        return this.type !== types.SPRING && this.type !== types.CLAY && this.type !== types.STANDING_WATER
     }
 
     toString() {
@@ -54,7 +58,7 @@ function generateGrid() {
         for (var x = xMin; x <= xMax; x++) {
             for (var y = yMin; y <= yMax; y++) {
                 if (!grid[y]) grid[y] = []
-                grid[y][x] = new Square(x, y, squareTypes.CLAY)
+                grid[y][x] = new Square(x, y, types.CLAY)
             }
         }
     })
@@ -64,7 +68,7 @@ function generateGrid() {
         grid[0] = []
     }
     for (var x = minX; x <= maxX; x++) {
-        grid[0][x] = new Square(x, 0, (x === SPRING_COL ? squareTypes.SPRING : squareTypes.SAND))
+        grid[0][x] = new Square(x, 0, (x === SPRING_COL ? types.SPRING : types.SAND))
     }
 
     // fill in sand
@@ -74,7 +78,7 @@ function generateGrid() {
         }
         for (var x = minX; x <= maxX; x++) {
             if (!grid[y][x]) {
-                grid[y][x] = new Square(x, y, squareTypes.SAND)
+                grid[y][x] = new Square(x, y, types.SAND)
             }
         }
     }
@@ -83,7 +87,7 @@ function generateGrid() {
 function countWetTiles() {
     return grid.reduce((wetCount, row, rowIndex) => {
         // only count rows between minY & maxY
-        return wetCount + (rowIndex > minY && rowIndex < maxY ? row.filter(square => square.type === squareTypes.WET_SAND || square.type === squareTypes.STANDING_WATER).length : 0)
+        return wetCount + (rowIndex > minY && rowIndex < maxY ? row.filter(square => square.type === types.WET_SAND || square.type === types.STANDING_WATER).length : 0)
     }, 0)
 }
 
@@ -93,14 +97,14 @@ function render() {
 
 function flowWater() {
     var wetSquares = 0;
-    var nextSquare = grid[1][SPRING_COL]
-    console.log(nextSquare)
-    while (nextSquare.type != squareTypes.CLAY && nextSquare.type != squareTypes.STANDING_WATER) {
-        nextSquare.convertType(squareTypes.WET_SAND)
-        if (nextSquare.y > minY && nextSquare.y < maxY) {
+    var currentSquare = grid[1][SPRING_COL]
+    console.log(currentSquare)
+    while (currentSquare && currentSquare.type != types.CLAY && currentSquare.type != types.STANDING_WATER) {
+        currentSquare.convertType(types.WET_SAND)
+        if (currentSquare.y > minY && currentSquare.y < maxY) {
             wetSquares++
         }
-        nextSquare = grid[nextSquare.y + 1][nextSquare.x]
+        currentSquare = findNextSquare(currentSquare)
     }
 }
 
@@ -108,9 +112,11 @@ function findNextSquare(curSquare) {
     var southSquare = grid[curSquare.y + 1][curSquare.x]
     var westSquare = grid[curSquare.y][curSquare.x - 1]
     var eastSquare = grid[curSquare.y][curSquare.x + 1]
-    var nortSquare = grid[curSquare.y - 1][curSquare.x]
+    var northSquare = grid[curSquare.y - 1][curSquare.x]
 
-
+    if(southSquare.isAccessible()) return southSquare;
+    if(westSquare.isAccessible()) return westSquare;
+    return null
 }
 
 generateGrid()
