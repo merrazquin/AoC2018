@@ -1,4 +1,5 @@
 const fs = require('fs')
+const SPRING_COL = 500
 // const inputFile = '17.txt'
 const inputFile = '17demo.txt'
 let grid = []
@@ -20,6 +21,8 @@ class Square {
     }
 
     convertType(type) {
+        if(this.type == squareTypes.CLAY || this.type == squareTypes.STANDING_WATER) throw new Error(`Cannot convert ${this.type.name} to ${this.type.name}`)
+        
         this.type = type
     }
 
@@ -61,7 +64,7 @@ function generateGrid() {
         grid[0] = []
     }
     for (var x = minX; x <= maxX; x++) {
-        grid[0][x] = new Square(x, 0, (x === 500 ? squareTypes.SPRING : squareTypes.SAND))
+        grid[0][x] = new Square(x, 0, (x === SPRING_COL ? squareTypes.SPRING : squareTypes.SAND))
     }
 
     // fill in sand
@@ -89,7 +92,27 @@ function render() {
 }
 
 function flowWater() {
-    
+    var wetSquares = 0;
+    var nextSquare = grid[1][SPRING_COL]
+    console.log(nextSquare)
+    while (nextSquare.type != squareTypes.CLAY && nextSquare.type != squareTypes.STANDING_WATER) {
+        nextSquare.convertType(squareTypes.WET_SAND)
+        if (nextSquare.y > minY && nextSquare.y < maxY) {
+            wetSquares++
+        }
+        nextSquare = grid[nextSquare.y + 1][nextSquare.x]
+    }
+}
+
+function findNextSquare(curSquare) {
+    var southSquare = grid[curSquare.y + 1][curSquare.x]
+    var westSquare = grid[curSquare.y][curSquare.x - 1]
+    var eastSquare = grid[curSquare.y][curSquare.x + 1]
+    var nortSquare = grid[curSquare.y - 1][curSquare.x]
+
+
 }
 
 generateGrid()
+flowWater()
+console.log(render())
