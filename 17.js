@@ -42,32 +42,26 @@ class Square {
         var neighbor
         switch (direction) {
             case 'south':
-                neighbor = this.southNeighbor()
+                neighbor = this.southNeighbor
                 break;
             case 'north':
-                neighbor = this.northNeighbor()
+                neighbor = this.northNeighbor
                 break;
             case 'east':
-                neighbor = this.eastNeighbor()
+                neighbor = this.eastNeighbor
                 break;
             case 'west':
-                neighbor = this.westNeighbor()
+                neighbor = this.westNeighbor
                 break;
         }
         return neighbor
     }
 
-    westNeighbor() {
-        return grid[this.y][this.x - 1]
-    }
-    eastNeighbor() {
-        return grid[this.y][this.x + 1]
-    }
-    northNeighbor() {
-        return grid[this.y - 1][this.x]
-    }
-    southNeighbor() {
-        return grid[this.y + 1][this.x]
+    isBlocked() {
+        return (this.northNeighbor && !this.northNeighbor.isConvertible()) ||
+            (this.southNeighbor && !this.southNeighbor.isConvertible()) ||
+            (this.eastNeighbor && !this.eastNeighbor.isConvertible()) ||
+            (this.westNeighbor && !this.westNeighbor.isConvertible())
     }
 }
 
@@ -118,6 +112,17 @@ function generateGrid() {
             }
         }
     }
+
+    generateNeighbors()
+}
+
+function generateNeighbors() {
+    grid.forEach(row => row.forEach(square => {
+        square.northNeighbor = grid[square.y - 1] ? grid[square.y - 1][square.x] : null
+        square.southNeighbor = grid[square.y + 1] ? grid[square.y + 1][square.x] : null
+        square.eastNeighbor = grid[square.y][square.x + 1]
+        square.westNeighbor = grid[square.y][square.x - 1]
+    }))
 }
 
 function countWetTiles() {
@@ -134,22 +139,18 @@ function render() {
 function flowWater(direction, prevSquare) {
     var currSquare = prevSquare.getNeighbor(direction)
     while (currSquare && currSquare.isConvertible()) {
-        currSquare.convertType(types.WET_SAND)
+        currSquare.convertType(currSquare.isBlocked ? types.STANDING_WATER : types.WET_SAND)
         var nextSquare = currSquare.getNeighbor(direction)
-        if(!nextSquare || !nextSquare.isAccessible()) {
-            currSquare.convertType(types.STANDING_WATER)
-        }
         prevSquare = currSquare
         currSquare = nextSquare //currSquare.getNeighbor(direction)
     }
-    console.log(currSquare)
-    console.log(prevSquare)
-    if(direction === 'south') {
+    if (direction === 'south' && currSquare.isBlocked()) {
         flowWater('east', prevSquare)
         flowWater('west', prevSquare)
     }
-    
+
 }
+
 
 function findNextSquare(currSquare) {
     var southSquare = grid[currSquare.y + 1][currSquare.x]
@@ -162,6 +163,11 @@ function findNextSquare(currSquare) {
     // if(eastSquare.isAccessible()) return eastSquare;
     // if(northSquare.isAccessible()) return northSquare;
     return null
+}
+
+function branch(currSquare) {
+    flowWater('west', currSquare)
+    flowWater('east', currSquare)
 }
 
 generateGrid()
