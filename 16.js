@@ -1,5 +1,5 @@
 const fs = require('fs')
-class Operation {
+class Sample {
     constructor(before, after, instructions) {
         this.before = before
         this.after = after
@@ -65,43 +65,43 @@ var operations = [
 
 // parse input
 var fullInput = fs.readFileSync('16full.txt').toString().trim().split(/\r{0,1}\n\r{0,1}\n\r{0,1}\n\r{0,1}\n/)
-var p1Input = fullInput[0].split(/\r{0,1}\n\r{0,1}\n/).map(parseOperation)
+var p1Samples = fullInput[0].split(/\r{0,1}\n\r{0,1}\n/).map(parseSample)
 var p2Input = fullInput[1].split(/\r{0,1}\n/).map(entry => entry.split(' ').map(val => parseInt(val)))
 
-function parseOperation(definition) {
+function parseSample(definition) {
     var parsed = definition.split(/\r{0,1}\n/)
     var before = parsed[0].split(': [')[1].replace(']', '').split(', ').map(val => parseInt(val))
     var instructions = parsed[1].split(' ').map(val => parseInt(val))
     var after = parsed[2].split(':  [')[1].replace(']', '').split(', ').map(val => parseInt(val))
-    return new Operation(before, after, instructions)
+    return new Sample(before, after, instructions)
 }
 
-function performAllOperations(operation) {
-    operation.possibleOperations = new Set()
+function performAllOperations(sample) {
+    sample.possibleOperations = new Set()
     for (var key in operations) {
-        var result = operation.performOp(key).join('')
+        var result = sample.performOp(key).join('')
         // if the result of the operation matches the 'after', then this sample behaves like the opcode
-        if (result === operation.after.join('')) {
-            operation.possibleOperations.add(key)
-            operations[key].add(operation.opcode)
+        if (result === sample.after.join('')) {
+            sample.possibleOperations.add(key)
+            operations[key].add(sample.opcode)
         }
     }
-    if (operation.possibleOperations.size >= 3) p1Total++
+    if (sample.possibleOperations.size >= 3) p1Total++
 }
 
 var p1Total = 0;
 // for each sample, perform all possible operations
-p1Input.forEach(performAllOperations)
-console.log('p1Total', p1Total)
+p1Samples.forEach(performAllOperations)
+console.log(`P1: ${p1Total} out of ${p1Samples.length} samples have 3 or more possible operations`)
 //556 is too low
 
 
-/* demo */
-var demo = parseOperation(`Before: [3, 2, 1, 1]
+/* WORKING demo */
+var demo = parseSample(`Before: [3, 2, 1, 1]
 9 2 1 2
 After:  [3, 2, 2, 1]`)
 performAllOperations(demo)
-console.log(`demo has ${demo.possibleOperations.size} possible operations: ${Array.from(demo.possibleOperations)}`)
+console.log(`demo has ${demo.possibleOperations.size} possible operations: ${Array.from(demo.possibleOperations).join(', ')}`)
 
 // speculative work for p2
 assignOpCodes(operations)
