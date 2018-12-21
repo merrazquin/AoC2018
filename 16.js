@@ -1,113 +1,130 @@
 const fs = require('fs')
 class Operation {
-    constructor(before, after, instruction) {
+    constructor(before, after, instructions) {
         this.before = before
         this.after = after
-        var parsedInstruction = instruction.split(' ').map(val => parseInt(val))
-        this.opcode = parsedInstruction[0]
-        this.A = parsedInstruction[1]
-        this.B = parsedInstruction[2]
-        this.C = parsedInstruction[3]
-        this.possibleOperations = 0
+        var [opcode, A, B, C] = instructions
+        Object.assign(this, { opcode, A, B, C })
+        this.possibleOperations = new Set()
     }
     performOp(op) {
         var result = this.before.slice()
-        var opA = this.before[this.A],
-            opB = op.endsWith('r') ? this.before[this.B] : this.B
+
+        // find values based on operation
+        var valA = this.before[this.A],
+            valB = op.endsWith('r') ? this.before[this.B] : this.B
+
+        // perform operation
         switch (op) {
             case 'addr':
             case 'addi':
-                result[this.C] = opA + opB
+                result[this.C] = valA + valB
                 break;
             case 'mulr':
             case 'muli':
-                result[this.C] = opA * opB
+                result[this.C] = valA * valB
                 break;
             case 'banr':
             case 'bani':
-                result[this.C] = opA & opB
+                result[this.C] = valA & valB
                 break;
             case 'borr':
             case 'bori':
-                result[this.C] = opA | opB
+                result[this.C] = valA | valB
                 break;
             case 'setr':
             case 'seti':
-                opA = op === 'seti' ? this.A : this.before[this.A]
-                result[this.C] = opA
+                valA = op === 'seti' ? this.A : this.before[this.A]
+                result[this.C] = valA
                 break;
             case 'gtir':
             case 'gtri':
             case 'gtrr':
-                opA = op.charAt(2) === 'r' ? this.before[this.A] : this.A
-                result[this.C] = +(opA > opB)
+                valA = op === 'gtir' ? this.A : this.before[this.A]
+                result[this.C] = +(valA > valB)
             case 'eqir':
             case 'eqri':
             case 'eqrr':
-                opA = op.charAt(2) === 'r' ? this.before[this.A] : this.A
-                result[this.C] = +(opA === opB)
+                valA = op === 'eqir' ? this.A : this.before[this.A]
+                result[this.C] = +(valA === valB)
         }
         return result
     }
 }
-var operations = {
-    'addr': new Set(),
-    'addi': new Set(),
-    'mulr': new Set(),
-    'muli': new Set(),
-    'banr': new Set(),
-    'bani': new Set(),
-    'borr': new Set(),
-    'bori': new Set(),
-    'setr': new Set(),
-    'seti': new Set(),
-    'gtir': new Set(),
-    'gtri': new Set(),
-    'gtrr': new Set(),
-    'eqir': new Set(),
-    'eqri': new Set(),
-    'eqrr': new Set()
-}
 
-// var input = fs.readFileSync('16.1.txt').toString().trim().split(/\r{0,1}\n\r{0,1}\n/).map(parseOperation)
-var input = fs.readFileSync('16full.txt').toString().trim().split(/\r{0,1}\n\r{0,1}\n\r{0,1}\n\r{0,1}\n/)[0].split(/\r{0,1}\n\r{0,1}\n/).map(parseOperation)
+// generate a Set for each possible operation
+var operations = [
+    'addr', 'addi',
+    'mulr', 'muli',
+    'banr', 'bani',
+    'borr', 'bori',
+    'setr', 'seti',
+    'gtir', 'gtri', 'gtrr',
+    'eqir', 'eqri', 'eqrr'
+].reduce((ops, op) => { ops[op] = new Set(); return ops }, {})
 
-function parseOperation(instructions) {
-    var parsed = instructions.split(/\r{0,1}\n/)
+// parse input
+var fullInput = fs.readFileSync('16full.txt').toString().trim().split(/\r{0,1}\n\r{0,1}\n\r{0,1}\n\r{0,1}\n/)
+var p1Input = fullInput[0].split(/\r{0,1}\n\r{0,1}\n/).map(parseOperation)
+var p2Input = fullInput[1].split(/\r{0,1}\n/).map(entry => entry.split(' ').map(val => parseInt(val)))
+
+function parseOperation(definition) {
+    var parsed = definition.split(/\r{0,1}\n/)
     var before = parsed[0].split(': [')[1].replace(']', '').split(', ').map(val => parseInt(val))
-    var instruction = parsed[1]
+    var instructions = parsed[1].split(' ').map(val => parseInt(val))
     var after = parsed[2].split(':  [')[1].replace(']', '').split(', ').map(val => parseInt(val))
-    return new Operation(before, after, instruction)
+    return new Operation(before, after, instructions)
 }
 
-var p1Total = 0;
 function performAllOperations(operation) {
-    operation.possibleOperations = 0
-    console.log(operation.before)
+    operation.possibleOperations = new Set()
     for (var key in operations) {
         var result = operation.performOp(key).join('')
-        console.log(key, result)
+        // if the result of the operation matches the 'after', then this sample behaves like the opcode
         if (result === operation.after.join('')) {
-            operation.possibleOperations++
+            operation.possibleOperations.add(key)
             operations[key].add(operation.opcode)
         }
     }
-    if (operation.possibleOperations >= 3) p1Total++
-    console.log(operation.after)
-    console.log('*'.repeat(10))
+    if (operation.possibleOperations.size >= 3) p1Total++
 }
 
-
-input.forEach(performAllOperations)
-console.log('p1', input.filter(operation => operation.possibleOperations >= 3).length)
+var p1Total = 0;
+// for each sample, perform all possible operations
+p1Input.forEach(performAllOperations)
 console.log('p1Total', p1Total)
 //556 is too low
-console.log(input.length)
-var testOp = new Operation([0, 1, 2, 3], [0, 1, 2, 3], '0 1 2 0')
-/*
-addr 3
-addi 3
-mulr 
-*/
-console.log(testOp)
-// performAllOperations(testOp)
+
+
+/* demo */
+var demo = parseOperation(`Before: [3, 2, 1, 1]
+9 2 1 2
+After:  [3, 2, 2, 1]`)
+performAllOperations(demo)
+console.log(`demo has ${demo.possibleOperations.size} possible operations: ${Array.from(demo.possibleOperations)}`)
+
+// speculative work for p2
+assignOpCodes(operations)
+function assignOpCodes(operations) {
+    var changed = false
+    for (var key in operations) {
+        if (typeof operations[key] === 'number') continue
+        if (operations[key].size === 1) {
+            var code = Array.from(operations[key])[0]
+            removeOpCode(code, key)
+            operations[key] = code
+            changed = true
+            break;
+        }
+    }
+    if (changed) {
+        assignOpCodes(operations)
+    }
+}
+function removeOpCode(code, except) {
+    for (var key in operations) {
+        if (key !== except && typeof operations[key] !== 'number') {
+            operations[key].delete(code)
+        }
+    }
+}
