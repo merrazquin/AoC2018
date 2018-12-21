@@ -42,6 +42,7 @@ class Sample {
             case 'gtrr':
                 valA = op === 'gtir' ? this.A : this.before[this.A]
                 result[this.C] = +(valA > valB)
+                break;
             case 'eqir':
             case 'eqri':
             case 'eqrr':
@@ -128,3 +129,5 @@ function removeOpCode(code, except) {
         }
     }
 }
+
+console.log(operations)
