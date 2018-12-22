@@ -63,7 +63,24 @@ var operations = [
     'gtir', 'gtri', 'gtrr',
     'eqir', 'eqri', 'eqrr'
 ].reduce((ops, op) => { ops[op] = new Set(); return ops }, {})
-
+var opcodes = {
+    0: 'bani',
+    1: 'addr',
+    2: 'mulr',
+    3: 'addi',
+    4: 'gtri',
+    5: 'banr',
+    6: 'borr',
+    7: 'eqri',
+    8: 'seti',
+    9: 'eqrr',
+    10: 'bori',
+    11: 'setr',
+    12: 'eqir',
+    13: 'muli',
+    14: 'gtrr',
+    15: 'gtir'
+}
 // parse input
 var fullInput = fs.readFileSync('16full.txt').toString().trim().split(/\r{0,1}\n\r{0,1}\n\r{0,1}\n\r{0,1}\n/)
 var p1Samples = fullInput[0].split(/\r{0,1}\n\r{0,1}\n/).map(parseSample)
@@ -83,6 +100,7 @@ function performAllOperations(sample) {
         var result = sample.performOp(key).join('')
         // if the result of the operation matches the 'after', then this sample behaves like the opcode
         if (result === sample.after.join('')) {
+            if(key.startsWith('bo')) console.log('found bo',key, sample.opcode)
             sample.possibleOperations.add(key)
             operations[key].add(sample.opcode)
         }
@@ -120,8 +138,20 @@ function assignOpCodes(operations) {
     }
     if (changed) {
         assignOpCodes(operations)
+    } else {
+        for (var key in operations) {
+            if (typeof operations[key] === 'number') continue
+            // console.log(key)
+            for(let opcode of operations[key]) {
+                var validated = p1Samples.filter(sample => sample.opcode === opcode).every(sample => sample.performOp(key).join('') === sample.after.join(''))
+                if(validated) {
+                    // console.log('   ', opcode, 'matches perfectly')
+                }
+            }
+        }
     }
 }
+
 function removeOpCode(code, except) {
     for (var key in operations) {
         if (key !== except && typeof operations[key] !== 'number') {
@@ -129,5 +159,7 @@ function removeOpCode(code, except) {
         }
     }
 }
+
+
 
 console.log(operations)

@@ -1,0 +1,32 @@
+addr
+    1 
+addi
+    3 
+mulr
+    2 
+muli
+    13 
+banr
+    5 
+bani
+    0 
+setr
+    11 
+seti
+    8 
+gtir
+    15 
+gtri
+    4 
+gtrr
+    14 
+eqir
+    12 
+eqri
+    7 
+eqrr
+    9 
+borr
+    6
+bori
+    10
