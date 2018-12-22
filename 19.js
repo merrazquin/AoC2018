@@ -1,15 +1,27 @@
 const fs = require('fs')
 
-var input = fs.readFileSync('19.demo.txt').toString().trim().split(/\r{0,1}\n/)
-var ip = input.shift()
+var input = fs.readFileSync('19.txt').toString().trim().split(/\r{0,1}\n/)
+var ip = 0;
+var boundRegister = parseInt(input.shift().split(' ').pop())
 var instructions = input.map(instruction => {
     var [op, A, B, C] = instruction.split(' ').map((val, index) => !index ? val : parseInt(val))
     return {op, A, B, C}
 })
-console.log(instructions)
+var registers = new Array(6).fill(0)
+console.log('starting at instruction', ip, 'ip is bound to register', boundRegister)
+
+while(ip < instructions.length) {
+    // execute instruction at ip
+    var instruction = instructions[ip]
+    registers[boundRegister] = ip
+    registers = performOp(instruction, registers)
+    ip = registers[boundRegister] + 1
+}
+console.log('p1', registers)
 
 // performOp function fro day 16
-function performOp(op, before, A, B, C) {
+function performOp(instruction, before) {
+    var {op, A, B, C} = instruction
     var result = before.slice()
 
     // find values based on operation
