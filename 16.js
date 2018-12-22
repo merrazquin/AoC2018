@@ -7,50 +7,51 @@ class Sample {
         Object.assign(this, { opcode, A, B, C })
         this.possibleOperations = new Set()
     }
-    performOp(op) {
-        var result = this.before.slice()
+}
 
-        // find values based on operation
-        var valA = this.before[this.A],
-            valB = op.endsWith('r') ? this.before[this.B] : this.B
+function performOp(op, before, A, B, C) {
+    var result = before.slice()
 
-        // perform operation
-        switch (op) {
-            case 'addr':
-            case 'addi':
-                result[this.C] = valA + valB
-                break;
-            case 'mulr':
-            case 'muli':
-                result[this.C] = valA * valB
-                break;
-            case 'banr':
-            case 'bani':
-                result[this.C] = valA & valB
-                break;
-            case 'borr':
-            case 'bori':
-                result[this.C] = valA | valB
-                break;
-            case 'setr':
-            case 'seti':
-                valA = op === 'seti' ? this.A : this.before[this.A]
-                result[this.C] = valA
-                break;
-            case 'gtir':
-            case 'gtri':
-            case 'gtrr':
-                valA = op === 'gtir' ? this.A : this.before[this.A]
-                result[this.C] = +(valA > valB)
-                break;
-            case 'eqir':
-            case 'eqri':
-            case 'eqrr':
-                valA = op === 'eqir' ? this.A : this.before[this.A]
-                result[this.C] = +(valA === valB)
-        }
-        return result
+    // find values based on operation
+    var valA = before[A],
+        valB = op.endsWith('r') ? before[B] : B
+
+    // perform operation
+    switch (op) {
+        case 'addr':
+        case 'addi':
+            result[C] = valA + valB
+            break;
+        case 'mulr':
+        case 'muli':
+            result[C] = valA * valB
+            break;
+        case 'banr':
+        case 'bani':
+            result[C] = valA & valB
+            break;
+        case 'borr':
+        case 'bori':
+            result[C] = valA | valB
+            break;
+        case 'setr':
+        case 'seti':
+            valA = op === 'seti' ? A : before[A]
+            result[C] = valA
+            break;
+        case 'gtir':
+        case 'gtri':
+        case 'gtrr':
+            valA = op === 'gtir' ? A : before[A]
+            result[C] = +(valA > valB)
+            break;
+        case 'eqir':
+        case 'eqri':
+        case 'eqrr':
+            valA = op === 'eqir' ? A : before[A]
+            result[C] = +(valA === valB)
     }
+    return result
 }
 
 // generate a Set for each possible operation
@@ -97,10 +98,9 @@ function parseSample(definition) {
 function performAllOperations(sample) {
     sample.possibleOperations = new Set()
     for (var key in operations) {
-        var result = sample.performOp(key).join('')
+        var result = performOp(key, sample.before, sample.A, sample.B, sample.C).join('')
         // if the result of the operation matches the 'after', then this sample behaves like the opcode
         if (result === sample.after.join('')) {
-            if(key.startsWith('bo')) console.log('found bo',key, sample.opcode)
             sample.possibleOperations.add(key)
             operations[key].add(sample.opcode)
         }
@@ -123,7 +123,7 @@ performAllOperations(demo)
 console.log(`demo has ${demo.possibleOperations.size} possible operations: ${Array.from(demo.possibleOperations).join(', ')}`)
 
 // speculative work for p2
-assignOpCodes(operations)
+// assignOpCodes(operations)
 function assignOpCodes(operations) {
     var changed = false
     for (var key in operations) {
@@ -142,9 +142,9 @@ function assignOpCodes(operations) {
         for (var key in operations) {
             if (typeof operations[key] === 'number') continue
             // console.log(key)
-            for(let opcode of operations[key]) {
+            for (let opcode of operations[key]) {
                 var validated = p1Samples.filter(sample => sample.opcode === opcode).every(sample => sample.performOp(key).join('') === sample.after.join(''))
-                if(validated) {
+                if (validated) {
                     // console.log('   ', opcode, 'matches perfectly')
                 }
             }
@@ -160,6 +160,12 @@ function removeOpCode(code, except) {
     }
 }
 
-
-
-console.log(operations)
+function solveP2() {
+    var registers = [0, 0, 0, 0]
+    p2Input.forEach(instruction => {
+        var [opcode, A, B, C] = instruction
+        registers = performOp(opcodes[opcode], registers, A, B, C)        
+    })
+    console.log('p2:',registers)
+}
+solveP2()
